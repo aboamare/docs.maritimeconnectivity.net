@@ -163,29 +163,41 @@ MCP token
 ^^^^^^^^^
 The first thing you should keep in mind is that the use of *mrn* and *org* in this chapter is based on :ref:`MCP namespace <mcp-mrn>`.
 
-MCP expects the following attributes in the OpenID Connect JWT Access Token:
+Open ID Connect ID Tokens minted by a MIR for a maritime identity should contain the same information as found in the X509 certificate for that identity. To this end the token shall have a `sub` claim, as well as claims for the relevant X509 extensions. Thus, a token for a User should have `sub` property with the full name and email address (as in the Subject Identifier of the certificate), as well as properties for the MRN, Permissions, Subsidiary MRN, and the Home MMS URL. Likewise a token representing a Vessel should have a `sub` with the Vessel Name, as well as properties for the Flagstate, Callsign, IMO number, etc. ID Token claims are mapped to the certificate fields as follows:
 
-+--------------------+-----------------------------------------------------------------------------------------+
-| Attribute          | Description                                                                             |
-+====================+=========================================================================================+
-| preferred_username | The username of the user in the parent organization.                                    |
-+--------------------+-----------------------------------------------------------------------------------------+
-| email              | The email of the user.                                                                  |
-+--------------------+-----------------------------------------------------------------------------------------+
-| given_name         | Firstname of the user.                                                                  |
-+--------------------+-----------------------------------------------------------------------------------------+
-| family_name        | Lastname of the user.                                                                   |
-+--------------------+-----------------------------------------------------------------------------------------+
-| name               | Full name of the user.                                                                  |
-+--------------------+-----------------------------------------------------------------------------------------+
-| org                | The Maritime Resource Name of the organization the user is a member of.                 |
-+--------------------+-----------------------------------------------------------------------------------------+
-| permissions        | List of permissions for this user assigned by the organization the user is a member of. |
-+--------------------+-----------------------------------------------------------------------------------------+
-| mrn                | The Maritime Resource Name of the user.                                                 |
-+--------------------+-----------------------------------------------------------------------------------------+
++-----------------+------------------------------------------------+---------------------------------------+
+| X509 Field Name | Open ID Connect claim                          | Used by                               |
++=================+================================================+=======================================+
+| Subject Name    |`sub`                                           | Vessel, User, Device, Service, MMS    |
++-----------------+------------------------------------------------+---------------------------------------+
+| Flagstate       |`flagstate`                                     | Vessel, Service                       |
++-----------------+------------------------------------------------+---------------------------------------+
+| Callsign        |`callsign`  					   | Vessel, Service                       |
++-----------------+------------------------------------------------+---------------------------------------+
+| IMO number      |`imo_number`                                    | Vessel, Service                       |
++-----------------+------------------------------------------------+---------------------------------------+
+| MMSI number     |`mmsi`                                          | Vessel, Service                       |
++-----------------+------------------------------------------------+---------------------------------------+
+| AIS shiptype    |`ais_type`                                      | Vessel, Service                       |
++-----------------+------------------------------------------------+---------------------------------------+
+| Port of register|`registered_port`                               | Vessel, Service                       |
++-----------------+------------------------------------------------+---------------------------------------+
+| Ship MRN        |`vessel.mrn`  			           | Service                               |
++-----------------+------------------------------------------------+---------------------------------------+
+| MRN             |`mrn`                                           | Vessel, User, Device, Service, MMS    |
++-----------------+------------------------------------------------+---------------------------------------+
+| Permissions     |`permissions`                                   | Vessel, User, Device, Service, MMS    |
++-----------------+------------------------------------------------+---------------------------------------+
+| Subsidiary MRN  |`subsidiary_mrn`                                | Vessel, User, Device, Service, MMS    |
++-----------------+------------------------------------------------+---------------------------------------+
+| Home MMS URL    |`mms_url`                                       | Vessel, User, Device, Service, MMS    |
++-----------------+------------------------------------------------+---------------------------------------+
+| URL             |`url`  					   | MMS                                   |
++-----------------+------------------------------------------------+---------------------------------------+
 
-These attributes will be directly mapped from attributes provided by the organizations Identity Provider, so the Identity Provider must also provide these attributes, except for the "org"-attribute.
+A Service of a Vessel should include the Vessel related claims in a `vessel` claim, which should be an `object` with the containing the claims of the Vessel.
+
+Claims will be directly mapped from attributes provided by the organizations Identity Provider, so the Identity Provider must also provide these attributes, except for the "org"-attribute.
 
 A thing to note here is that all the above attributes will not apply to all entity types, for example device or vessel entity will not have an email address.
 
@@ -211,25 +223,10 @@ There are some requirements to enable identity brokerage in MCP.
 
 Setting up an OIDC Identity Provider
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-OpenID Connect is supported by the latest ADFS and `Keycloak <https://www.keycloak.org/>`__ releases. MCP Identity Broker only supports the `OpenID Connect Authorization Code Flow <https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth>`__ when connecting to Identity Providers. This limitation only applies when the Identity Broker connects to Identity Providers, not when Services/Clients connects to the Identity Broker.
+OpenID Connect is supported by the latest ADFS and `Keycloak <https://www.keycloak.org/>`__ releases. The MCP Identity Broker only supports the `OpenID Connect Authorization Code Flow <https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth>`__ when connecting to Identity Providers. This limitation only applies when the Identity Broker connects to Identity Providers, not when Services/Clients connects to the Identity Broker.
 
-As default MCP Identity Broker expect the following attributes to be provided by an OpenID Connect Identity Provider:
+As default the MCP Identity Broker expects that an OpenID Connect Identity Provider provides all the claims required to create an MCP Identity Token, or indeed	a certificate. However, when the token is to represent a User, the `sub` claim may be omitted if the token does include at least the `email` and the `name` claims.
 
-+--------------------+-----------------------------------------------------------------------------------------+
-| Attribute          | Description                                                                             |
-+====================+=========================================================================================+
-| preferred_username | The username of the user in the parent organization.                                    |
-+--------------------+-----------------------------------------------------------------------------------------+
-| email              | The email of the user.                                                                  |
-+--------------------+-----------------------------------------------------------------------------------------+
-| given_name         | Firstname of the user.                                                                  |
-+--------------------+-----------------------------------------------------------------------------------------+
-| family_name        | Lastname of the user.                                                                   |
-+--------------------+-----------------------------------------------------------------------------------------+
-| name               | Full name of the user.                                                                  |
-+--------------------+-----------------------------------------------------------------------------------------+
-| permissions        | List of permissions for this user assigned by the organization the user is a member of. |
-+--------------------+-----------------------------------------------------------------------------------------+
 
 If your Identity Provider has the values in different attributes, some mapping can be set up.
 
